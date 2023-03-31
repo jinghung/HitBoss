@@ -1,0 +1,185 @@
+/*=============共用=============*/
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+}
+
+ol, ul, li {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+a {
+    cursor: pointer;
+}
+
+a:focus {
+    outline: none;
+}
+
+*:focus {
+    outline: none;
+}
+
+* {
+    -webkit-box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.c-ffe100 {
+    color: #ffe100;
+}
+
+.c-37eaff {
+    color: #37eaff;
+}
+
+.c-ff7800 {
+    color: #ff7800;
+}
+
+.c-ff7800:before {
+    color: #ff7800;
+}
+
+.c-00fef9 {
+    color: #00fef9;
+}
+
+.c-ffffff {
+    color: #ffffff;
+}
+
+.c-9400ff {
+    color: #9400ff;
+}
+
+.c-f15b00 {
+    color: #f15b00;
+}
+
+.c-ff4200 {
+    color: #ff4200;
+}
+
+.c-ffea54 {
+    color: #ffea54;
+}
+
+.c-fff600 {
+    color: #fff600;
+}
+
+.l-nolink {
+    cursor: default;
+}
+
+.l-tabClickColor {
+    color: yellow;
+    font-weight: 900;
+}
+
+.l-underline {
+    text-decoration: underline;
+}
+
+.l-w900 {
+    font-weight: 900;
+}
+
+.l-hover:hover {
+    opacity: .8;
+    -webkit-transition: opacity .2s linear;
+    transition: opacity .2s linear;
+}
+
+.l-list-n1 {
+    padding: 0 0 0 1.8rem;
+}
+
+.l-list-n1 > li {
+    list-style: decimal;
+}
+
+.l-list-n2 {
+    padding: 0 0 0 1.8rem;
+}
+
+.l-list-n2 > li {
+    list-style: decimal-leading-zero;
+}
+
+.l-list-n3 {
+    position: relative;
+}
+
+.l-list-n3 > li {
+    padding: 0 0 0 2rem;
+    counter-increment: cnt;
+    list-style: none;
+}
+
+.l-list-n3 > li:before {
+    display: marker;
+    content: "(" counter(cnt) ") ";
+    text-align: right;
+    position: absolute;
+    margin: 0 0 0 -2.2em;
+    width: 2em;
+}
+
+.l-list-type1 {
+    padding: 0;
+    position: relative;
+}
+
+.l-list-type1 > li {
+    padding: 0 0 0 1em;
+}
+
+.l-list-type1 > li:before {
+    content: '★ ';
+    position: absolute;
+    margin: 0 0 0 -1em;
+}
+
+.l-list-type2 {
+    padding: 0;
+}
+
+.l-list-type2 > li {
+    list-style: none;
+    padding: 0 0 0 1em;
+}
+
+.l-list-type2 > li:before {
+    content: '◆ ';
+    position: absolute;
+    margin: 0 0 0 -1em;
+}
+
+.l-list-type3 {
+    padding: 0;
+}
+
+.l-list-type3>li {
+    list-style: disc;
+    margin: 0 1rem;
+}
+
+.l-list-t3 {
+    padding: 0 0 0 3em;
+}
+
+.l-list-t3:before {
+    content: '舉例：';
+    position: absolute;
+    margin: 0 0 0 -3em;
+}
+
+.ending img {width: 100%;}
+
+.eventStop {
+    width: 100%;
+}

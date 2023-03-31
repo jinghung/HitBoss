@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="format-detection" content="telephone=no">
+    <title>打王活動</title>
+    <link rel="stylesheet" href="css/loaders.min.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="css/HitBossLottery.css" />
+</head>
+<body>
+    <div id="wrapper">
+        <div id="banClick-mask" v-if="isClick"></div>
+        <div id="loading-mask" v-show="isLoading" :class="{type1: !isFirstLoading}">
+            <div class="loader-inner ball-spin-fade-loader"></div>
+        </div>
+        <div id="container">
+            <div id="content" ref="contentObj" :class="{'isloading':!isLoading || !isFirstLoading}">
+
+                <div id="bigRewardMask" :class="{show: bigPrizeFlag && bigPrizeFlag < 5, start: bigPrizeFlag == 2 , leave: bigPrizeFlag == 3, noBlack: bigPrizeFlag >= 4}">
+                    <img id="bigPrizePic" :src="getInfoData.LotteryGif2" v-if="getInfoData.LotteryGif2 && bigPrizeFlag > 1 && bigPrizeFlag < 4" />
+                </div>
+                <article id="content_header">
+                    <a class="btnBigAwardRangeLeft" @click="btnClick('popType',6,null)"></a>
+                    <a class="btnBigAwardRangeRight" @click="btnClick('popType',6,null)"></a>
+                    <div class="bigPrize">
+                        <div class="iconRed" v-if="getInfoData.LotteryRed"><img src="images/icon/dot_red.png" /></div>
+                        <img src="images/icon/lottery_week_out_top.png" class="box_out_top" />
+                        <img src="images/icon/lottery_week_out_fot.png" class="box_out_fot" />
+                        <img src="images/icon/lottery_week_text.png" class="img_text" />
+                        <img :src="getInfoData.LotteryGif1" class="img_prize" :class="{'showDown': bigPrizeFlag == 4}" v-if="getInfoData.LotteryGif1 && bigPrizeFlag >= 4" />
+                        <img src="images/icon/lottery_week_in.png" class="box_in" />
+                    </div>
+                    <div class="lottery_ticket_list">
+                        <template v-for="(item,idx) in 3">
+                            <div class="lottery_ticket_box">
+                                <img :src="`images/icon/ticket_${item}.png`" />
+                                <div class="lottery_ticket_num">
+                                    <div class="lottery_ticket_text" v-if="getInfoData[lotteryName[idx]] != undefined" v-text="getInfoData[lotteryName[idx]].toLocaleString()" :class="{more: getInfoData[lotteryName[idx]].toLocaleString().length > 10}"></div><!--持有抽獎券數量-->
+                                    <img src="images/icon/box_ticket_num.png" />
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <a class="btnInfo clickAnimate" @click="btnClick('popType',1,$event)"><img src="images/btn_info.png" /></a>
+                    <div class="event_countdown">
+                        <img src="images/icon/countdown_text.png" class="img_countdown" />
+                        <img src="images/icon/clock.png" class="img_clock" />
+                        <div class="countdown_lastTime" v-text="countdown.CloseTime"></div><!--活動結束時間-->
+                    </div>
+                </article>
+                <article id="content_mid" ref="contentMidObj">
+                    <a class="btnTomorrow clickAnimate" v-if="currentBoss == 0 && (getInfoData.BossList && getInfoData.BossList.length > 1)" @click="if(isClick) return; currentBoss=1"><img src="images/btn_boss_tomorrow.png" /></a>
+                    <a class="btnBack clickAnimate" v-if="currentBoss == 1" @click="if(isClick) return; currentBoss=0"><img src="images/btn_boss_back.png" /></a>
+                    <div id="content_boss">
+                        <div class="attackBossBox" v-if="isAttackShow">
+                            <div class="stepImg" :style="weaponStyle"></div>
+                            <template v-for="(item,idx) in attackHurt">
+                                <div class="attackBossValue show" @animationend="idx == (attackHurt.length - 1) ? removeClass($event,'show',400) : removeClass($event,'show',0)">
+                                    <div class="attackBossValueText">
+                                        <template v-for="num in item.HitPoint.toLocaleString().split('')">
+                                            <img :src="`images/icon/num/hit_${num}.png`" />
+                                        </template>
+                                    </div>
+                                    <img v-if="item.IsEffects" src="images/icon/punch_bg.png" class="effectsBg" />
+                                </div>
+                            </template>
+                            <img :src="getInfoData.BossList[0].BossHitPic" class="bossHit" :class="{show:isAttackShow > 1}" />
+                        </div>
+                        <div class="content_boss_range" :class="{next: currentBoss == 1, lastPhase: getInfoData.BossList && getInfoData.BossList.length < 2}">
+                            <template v-for="(item,idx) in getInfoData.BossList">
+                                <div class="content_boss_list" :class="{comingsoon: idx == 1}">
+                                    <img src="images/icon/comingsoon.png" class="iconComingsoon" v-if="idx == 1" />
+                                    <img :src="item.BossNormalPic" class="boss_pic" />
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </article>
+
+                <article id="content_foot">
+                    <article id="content_foot_top">
+                        <div class="boss_info" v-if="getInfoData.BossList && getInfoData.BossList.length">
+                            <div class="boss_info_range">
+                                <a class="prize_box clickAnimate" @click="btnClick('popMsgType', 7, $event)">
+                                    <img src="images/icon/prize_info.png" class="prize_info" />
+                                    <img :src="getInfoData.BossList[currentBoss].ShowPrizePic" class="img_prize" />
+                                </a>
+                                <div class="boss_name" v-text="getInfoData.BossList[currentBoss].BossName"></div><!--當前Boss名稱-->
+                                <div class="show_time"><!--當前Boss倒數時間-->
+                                    <img src="images/icon/clock.png" class="clock" />
+                                    <span class="show_time_text" v-text="countdown.ts_EndDate[currentBoss]"></span>
+                                </div>
+                            </div>
+                            <img src="images/box_boss_info.png" />
+                        </div>
+                        <a class="btnMonthTask clickAnimate" @click="btnClick('popType',3,$event)"><img src="images/btn_monthTask.png" :class="{scaleRed: getInfoData.TaskRed}" /></a>
+                    </article>
+                    <article id="content_foot_play">
+                        <div class="content_foot_play_range">
+                            <div class="attack_list" v-if="getInfoData.BossList && getInfoData.BossList.length">
+                                <template v-for="(item,idx) in getInfoData.BossList[currentBoss].WeaponList">
+                                    <a class="btn_attack" :class="{clickAnimate: currentBoss == 0, noClick: currentBoss == 1}" @click="if(isClick || currentBoss) return; btnClick('btnAttack',null,$event, idx)">
+                                        <div class="btn_attack_range">
+                                            <img :src="item.WeaponPic" class="icon_weapon" />
+                                            <img src="images/icon/ticket_weapon.png" class="icon_ticket" />
+                                            <div class="ticket_cost" v-text="`-${attackCost[idx]}`"></div>
+                                        </div>
+                                        <img src="images/btn_attack_box.png" />
+                                    </a>
+                                </template>
+                            </div>
+                            <div class="ticket_info">
+                                <div class="ticket_info_range">
+                                    <a class="btn_ticket_info" @click="btnClick('popMsgType', 6, null)"></a>
+                                    <img src="images/icon/ticket_weapon.png" class="ticket_weapon" />
+                                    <div class="ticket_number" v-if="getInfoData.FreeRaffle != undefined" v-text="getInfoData.FreeRaffle.toLocaleString()"></div><!--持有武器券-->
+                                    <!--十連抽開關-->
+                                    <a class="btnTenLottery" @click="if(isClick) return; tenLottryFlag = !tenLottryFlag">
+                                        <img src="images/icon/ten_ball.png" class="iconBall animate" :style="{'left':tenBtnPos}" />
+                                        <img src="images/icon/ten_off.png" v-if="tenLottryFlag == false" />
+                                        <img src="images/icon/ten_on.png" v-if="tenLottryFlag == true" />
+                                    </a>
+                                </div>
+                                <img src="images/box_weapon_info.png" />
+                            </div>
+                        </div>
+                    </article>
+                    <article id="content_foot_btn">
+                        <div class="content_foot_btn_range">
+                            <a class="clickAnimate" @click="btnClick('popType',2,$event)"><img src="images/btn_foot_record.png" /></a>
+                            <a class="clickAnimate" @click="btnClick('popType',4,$event)"><img src="images/btn_foot_rank.png" /></a>
+                            <a class="clickAnimate" @click="btnClick('popType',5,$event)">
+                                <img src="images/icon/dot_red.png" class="iconRed" v-if="getInfoData.StroedTaskFlag" />
+                                <img src="images/btn_foot_store.png" />
+                            </a>
+                        </div>
+                    </article>
+                </article>
+                
+            </div>
+        </div>
+        <div id="maskWrap" :class="{show: popType}" @click.self="popClose($event)">
+            <div class="maskRange" ref="maskRangeObj" :class="{'show': popType >= 1}">
+                <a class="btnPopClose clickAnimate" @click="btnClick('popType',null,$event)"><img src="images/btn_close.png" /></a>
+                <article>
+                    <img v-if="popType" :src="`images/icon/title_${popType}.png`" id="page_title" :class="{more1: [3,4].includes(popType),more2: [5].includes(popType)}" />
+                    <section id="page_info" :class="{show:popType == 1}"><!--活動說明-->
+                        <div class="page_menu">
+                            <div class="page_menu_range">
+                                <a @click="if(isClick) return; pageInfoTab = 1" :class="{'active': pageInfoTab == 1}">活動時間</a>
+                                <a @click="if(isClick) return; pageInfoTab = 2" :class="{'active': pageInfoTab == 2}">活動方式</a>
+                                <a @click="if(isClick) return; pageInfoTab = 3" :class="{'active': pageInfoTab == 3}">活動獎勵</a>
+                                <img src="images/tab_bg.png" class="menuBtn" :style="{'left':pageInfoPos}" />
+                            </div>
+                        </div>
+                        <div class="page_info_con page_box_bg">
+                            <div class="page_info_con_range" :class="{platWeb: isWebPlat}">
+                                <template v-if="pageInfoTab == 1">
+                                    <div class="itemCon">
+                                        <h4>活動時間</h4>
+                                        <div class="itemInfo" v-text="`${getEventDescData.StartDate} ~ ${getEventDescData.CloseDate}`"></div>
+                                    </div>
+                                    <div class="itemCon">
+                                        <h4 class="text6">雙周抽獎時間</h4>
+                                        <div class="itemInfo">
+                                            {{getEventDescData.LotteryDate}} 官方FB粉絲團 直播抽<br>
+                                            並於 {{getEventDescData.SetPrizeDate}} 前置獎
+                                        </div>
+                                    </div>
+                                    <div class="itemCon">
+                                        <h4>打王武器</h4>
+                                        <div class="itemInfo">每天會出現一隻世界王，會依照使用的武器，獲得指定抽獎券+指定獎項+隨機獎項(參照下方表格)</div>
+                                        <table class="infoTable">
+                                            <tr>
+                                                <th width="50%">出現日期</th>
+                                                <th width="50%">世界王</th>
+                                            </tr>
+                                            <template v-for="item in getEventDescData.BossSchedule">
+                                                <tr>
+                                                    <td v-text="item.BossDateString"></td>
+                                                    <td v-text="item.BossName"></td>
+                                                </tr>
+                                            </template>
+                                        </table>
+                                        <template v-for="item in getEventDescData.BossPrizeDataForDesc">
+                                            <table class="infoTable">
+                                                <tr>
+                                                    <td colspan="4" class="title_big" v-text="item.BossName"></td>
+                                                </tr>
+                                                <tr>
+                                                    <th width="34%">武器相關</th>
+                                                    <th width="33%">指定獎項</th>
+                                                    <th width="33%">隨機獎項</th>
+                                                </tr>
+                                                <template v-for="list in item.WeaponPrize">
+                                                    <tr>
+                                                        <td v-html="list.WeaponDesc"></td>
+                                                        <td v-html="list.DesignatedPrizeData"></td>
+                                                        <td v-html="list.RandomPrizeData"></td>
+                                                    </tr>
+                                                </template>
+                                            </table>
+                                        </template>
+                                    </div>
+                                    <div class="itemCon">
+                                        <h4 class="text7">每日傷害排行榜</h4>
+                                        <div class="itemInfo">
+                                            每日23:59結算當日玩家對世界王的總傷害，依個人總傷害排名給獎勵，於隔日18點前置獎<br>
+                                            ※傷害計算 : 當日使用武器攻擊全部世界王的總計<br>
+                                        </div>
+                                        <template v-for="item in getEventDescData.LeaderboardPrizeData">
+                                            <div class="itemCon_text">※此排行榜適用世界王 : {{item.BossNameDesc}}</div>
+                                            <table class="infoTable">
+                                                <tr>
+                                                    <th width="30%">名次</th>
+                                                    <th width="70%">獎勵</th>
+                                                </tr>
+                                                <template v-for="list in item.LeaderboardPrizeDataDetail">
+                                                    <tr>
+                                                        <td v-text="list.RowNo"></td>
+                                                        <td v-html="list.PrizeDesc"></td>
+                                                    </tr>
+                                                </template>
+                                            </table>
+                                        </template>
+                                    </div>
+                                    
+                                </template>
+                                <template v-if="pageInfoTab == 2">
+                                    <img v-if="getEventDescData.DescPic" :src="getEventDescData.DescPic" class="eventInfoPic" />
+                                </template>
+                                <template v-if="pageInfoTab == 3">
+                                    <div class="itemCon">
+                                        <div class="itemInfo">
+                                            <ol class="l-list-n1">
+                                                <li>因個人網路環境因素導致斷線或連線失敗……等問題，本公司恕不負任何責任，活動亦照常舉行且不另做其他補償</li>
+                                                <li>活動中若有舞弊行為經系統查核屬實，將取消玩家活動及獲獎資格，所有判決將依據官方公告為準</li>
+                                                <li>活動中若發生不可抗力之因素，本公司將保留變更或終止本活動時間、內容、贈品之權利，並改由其他活動內容變更或等值商品取代，詳情以官網公告訊息為主，若有任何問題請洽詢客服</li>
+                                                <li>獲獎將不另行通知，請關注獲獎名單，並於獲獎日+7日內至禮物中心兌換，如未於第7日18:00前完成，則視為放棄</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="page_record" :class="{show:popType == 2}"><!--活動紀錄-->
+                        <div class="page_record_con page_box_bg">
+                            <ul class="record_list" :class="{platWeb: isWebPlat}">
+                                <template v-for="item in getRecordData.HitBossRecord">
+                                    <li>
+                                        <div v-text="item.CreateDate"></div>
+                                        <div v-html="item.recordDesc"></div>
+                                        <strong>獲得 
+                                            <template v-for="(list, listIdx) in item.Gifts">
+                                                <span class="text_award" v-text="listIdx == 0 ? list.GiftDesc : '、' + list.GiftDesc"></span>
+                                            </template>
+                                        </strong>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                        <div class="page_notice">- 僅顯示近100筆資料 -</div>
+                    </section>
+                    <section id="page_task" :class="{show:popType == 3}"><!--任務拿武器-->
+                        <iframe id="iframeTask"></iframe>
+                    </section>
+                    <section id="page_rank" :class="{show:popType == 4}"><!--每日排行榜-->
+                        <div class="page_rank_con">
+                            <div class="rank_select_wrap">
+                                <div class="rank_select_range">
+                                    <div class="rank_select_box">
+                                        <label for="select_date" class="select_text" v-text="selectRankTime.StartDate"></label>
+                                        <select name="" id="select_date" v-model="selectRankTime">
+                                            <template v-for="item in rankPhaseList">
+                                                <option :value="item" v-text="item.StartDate"></option>
+                                            </template>
+                                        </select>
+                                        <img src="images/icon/select_arror.png" class="select_arror" />
+                                        <img src="images/icon/select_box.png" />
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="rank_list" :class="{platWeb: isWebPlat}">
+                                <template v-for="item in getRankListData.RankData">
+                                    <li @click="item.ShowFlag = !item.ShowFlag">
+                                        <div class="rank_box_range">
+                                            
+                                            <div class="rank_mask" :class="{show:item.ShowFlag}">
+                                                <img src="images/icon/rank_award.png" class="rank_reward_title" />
+                                                <div class="rank_reward_info">
+                                                    <template v-for="list in item.GiftDetail">
+                                                        <div v-text="list.GiftDesc"></div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                            <!--排行名次-->
+                                            <div class="rank_no" v-if="item.Rowno <= 3"><img :src="`images/icon/rank_rowno_${item.Rowno}.png`" /></div>
+                                            <div class="rank_no" v-else v-text="item.Rowno"></div>
+                                            <div class="rank_nickName"><!--玩家卡別暱稱-->
+                                                <div v-text="item.NickName"></div>
+                                            </div>
+                                            <div class="rank_winlose">
+                                                <img :src="`images/icon/rank_text_${item.Rowno <= 3 ? item.Rowno : 4}.png`" />
+                                                <div v-text="item.TotalHitPoint"></div>
+                                            </div>
+                                            <div class="rank_reward">
+                                                <div class="rank_reward_box" v-for="list in item.GiftDetail">
+                                                    <div class="reward_num" v-if="list.ItemValue > 1">
+                                                        <div v-text="`x${list.ItemValue}`" :class="{more: list.ItemValue.toLocaleString().length > 2}"></div>
+                                                        <img src="images/icon/award_num.png" />
+                                                    </div>
+                                                    <img :src="list.GiftUrl" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <img :src="`images/icon/rank_box_${item.Rowno <= 3 ? item.Rowno : 4}.png`" />
+                                    </li>
+                                </template>
+                                
+                                <li id="listSpaceH"></li>
+                            </ul>
+                            <div class="rank_selfInfo" :class="{odd: !getRankListData.ts_EndDate}">
+                                <div class="rank_self_rowno" v-text="getRankListData.Current_Rowno"></div><!--當前排名-->
+                                <div class="rank_self_winlose" v-text="getRankListData.Current_TotalHitPoint"></div><!--當前積分-->
+                            </div>
+
+                            <div class="rank_countdown">
+                                <template v-if="getRankListData.ts_EndDate">
+                                    <img src="images/icon/rank_clock.png" class="rank_clock" />
+                                    <div class="rank_lasttime" v-text="countdown.ts_EndDate[0]"></div>
+                                </template>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="page_store" :class="{show:popType == 5}"><!--累儲送券-->
+                        <div class="page_store_con">
+                            <div class="store_header">
+                                <div class="store_header_range">
+                                    <div class="store_header_box">
+                                        <div class="store_header_box_range">
+                                            您目前為會員
+                                        </div>
+                                        <img src="images/page_store_top_box.png" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="store_list_header">
+                                <a class="store_info" @click="btnClick('popMsgType', 5, null)"><!--已累儲資訊-->
+                                    <div class="store_dollar" v-if="getStoredData.TotalStored != undefined" v-text="getStoredData.TotalStored.toLocaleString()"></div>
+                                    <img src="images/page_store_list_top.png" />
+                                </a>
+                                <template v-for="(item,idx) in 3">
+                                    <div class="store_level_title"></div>
+                                </template>
+                            </div>
+                            <div class="store_list_content" :class="{platWeb: isWebPlat}">
+                                <ul class="store_amount"><!--累儲門檻-->
+                                    <template v-for="item in getStoredData.StoredList">
+                                        <li class="amount_list">
+                                            <div class="amount_box">
+                                                <div class="amount_box_number">
+                                                    <template v-for="num in item.Amount.split('')">
+                                                        <img :src="`images/icon/num/pro_${num == '萬' ? 'tenthousand' : num}.png`" :class="{'comma': num == ',','text': num == '萬'}" />
+                                                    </template>
+                                                </div>
+                                                <img src="images/icon/progress_box.png" />
+                                            </div>
+                                            <div class="progress_out">
+                                                <div class="progress_in_arror" v-if="item.IsArror">
+                                                    <img src="images/icon/progress_bar_in_arror.png" />
+                                                </div>
+                                                <div class="progress_in" :style="{height: item.Progress}"></div>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
+                                <template v-for="(item,idx) in getStoredData.StoredTaskList">
+                                    <ul class="store_level" :data-type="item.TypeID">
+                                        <div class="lock_mask" v-if="item.IsLock"></div>
+                                        <template v-for="(list,listIdx) in item.StoredTaskDetail">
+                                            <li class="level_list">
+                                                <a v-if="list.ItemValue > 0" class="reward_box" :class="{cursor: list.CompleteType == 2}" @click="if(isClick || (isStoreEnd && list.CompleteType != 2)) return; receiveBonus(list.CompleteType, idx,1, listIdx)">
+                                                    <div class="gift_num">
+                                                        <div class="gift_num_box" v-text="`x${list.ItemValue}`"></div>
+                                                        <img src="images/icon/award_numII.png" />
+                                                    </div>
+                                                    <img v-if="list.CompleteType == 1" src="images/icon/award_done.png" class="done" />
+                                                    <img :src="list.ItemPicUrl" />
+                                                    <img v-if="list.CompleteType == 2" src="images/icon/glow.png" class="glow" />
+                                                </a>
+                                                <img v-else src="images/icon/award_no.png" class="noReward" />
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </template>
+                            </div>
+                            <div class="store_list_footer">
+                                <div class="store_list_footer_range">
+                                    <a class="btnReceive" :class="{noClick: !isReceiveGet, clickAnimate: !isStoreEnd || isReceiveGet}" @click="if(isClick || (!isReceiveGet && isStoreEnd)) return; btnClick(null, null, $event)" @animationend="receiveBonus(null, null , -1)"><img src="images/btn_receive.png" /></a>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="page_lottery" :class="{show:popType == 6}"><!--雙週抽獎項-->
+                        <div class="page_lottery_con">
+                            <div class="lotteryWeekHeader">
+                                <div class="lotteryWeekHeaderRange" v-if="getInfoData.LotteryDate">
+                                    {{getInfoData.LotteryDate}} 官方FB粉絲團直播抽
+                                </div>
+                            </div>
+                            <div class="lotteryWeekContent" :class="{platWeb: isWebPlat}">
+                                <img v-if="getInfoData.LotteryPicUrl" :src="getInfoData.LotteryPicUrl" class="lotteryWeekPic" />
+                            </div>
+                        </div>
+                    </section>
+                    <div class="page_top"></div>
+                    <div class="page_mid"></div>
+                    <div class="page_fot"></div>
+                </article>
+            </div>
+        </div>
+        <div id="maskMsgWrap" :class="{show: popMsgType}" @click="closeMask(2,$event)">
+            <div class="msgRange msgWarn" :class="{show: [1,2,8].includes(popMsgType)}">
+                <a class="msgClose" @click="btnClick('popMsgType', null, $event)" v-if="popMsgType == 8"><img src="images/btn_close.png" /></a>
+                <div class="msgWarnRange">
+                    <div class="msgWarnText" v-html="popMsg.msg"></div>
+                    <div class="msgBtnBox">
+                        <template v-if="popMsgType == 1"><!--一般訊息-->
+                            <a class="clickAnimate" @click="btnClick('popMsgType', null, $event)"><img src="images/btn_sure.png" /></a>
+                        </template>
+                        <template v-if="popMsgType == 8"><!--累儲無法領取訊息-->
+                            <a class="clickAnimate" @click="btnClick(null, null, $event)" @animationend="goStore"><img src="images/btn_go_bank.png" /></a>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <!--恭喜獲得-->
+            <div class="msgRange getReward" ref="getRewardObj" :class="{show: popMsgType == 3}">
+                <div class="getRewardTitle">
+                    <img src="images/title_getReward.png" />
+                </div>
+                <div class="getRewardContent">
+                    <ul class="getRewardList" :class="{platWeb: isWebPlat}">
+                        <li v-for="item in prizeGetList">
+                            <div class="getRewardListRange">
+                                <div class="getRewardBox" v-for="list in item.Gifts">
+                                    <img :src="list.GiftUrl" />
+                                    <div class="getRewardMemo" v-text="list.GiftDesc"></div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="getRewardBtn">
+                    <div class="getRewardBtnRange">
+                        <a class="btnClose clickAnimate" @click="btnClick('popMsgType',null,$event)"><img src="images/btn_sure.png" /></a>
+                    </div>
+                </div>
+            </div> 
+            <!--氣泡彈窗-->
+            <div class="msgRange popMsgBox" ref="popMsgBoxObj" :class="{show: popMsgType >= 4 && popMsgType < 8}"  @click="closeMask(2,$event)">
+                <!--一鍵領取無法點擊時-->
+                <div class="bubble goStore" :style="{top:bubbleTop.goStore}" :class="{show: popMsgType == 4}">
+                    請前往儲值<br>
+                    累儲達門檻就能獲得獎勵!<br>
+                    <a class="btnGoStore clickAnimate" @click="btnClick(null, null, $event)" @animationend="goStore"><img src="images/btn_go_store.png" /></a>
+                </div>
+                <!--累儲左上資訊點擊-->
+                <div class="bubble storeInfo" :style="{top:bubbleTop.storeInfo}" :class="{show: popMsgType == 5}">
+                    累積儲值NT$達以下門檻<br>
+                    即可依照卡別獲得抽獎券獎勵!<br>
+                    <div class="color01">★累儲採計~{{getEventDescData.StoreEnd}}</div>
+                </div>
+                <!--持有武器券說明點擊-->
+                <div class="bubble ticketInfo" :style="{top:bubbleTop.ticketInfo}" :class="{show: popMsgType == 6}">
+                    可從押注、任務中<br>
+                    獲得武器券。
+                </div>
+                <!--指定獎項點擊-->
+                <div class="bubble bossPrize" :style="{top:bubbleTop.bossPrize}" :class="{show: popMsgType == 7}">
+                    ★ 指定獎項 ★
+                    <ul class="prizeList" v-if="getInfoData.BossList && getInfoData.BossList.length">
+                        <li class="prizeListBox" v-for="item in getInfoData.BossList[currentBoss].BossBasePrizeList">
+                            <div class="prizeListTitle" v-text="`${item.WeaponDesc}▸`"></div>
+                            <div class="prizeListMemo" v-text="item.ItemValue > 1 ? item.ItemName + ' x' + item.ItemValue : item.ItemName"></div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    
+
+
+    <script type="text/javascript" src="js/Vue/3.2.31/vue.global.prod.js"></script>
+    <script type="text/javascript" src="js/common.js"></script>
+    <script type="text/javascript">
+        var memberLevel = 3;
+    </script>
+    <script type="text/javascript" src="js/PageMethods.js"></script>
+    <script type="text/javascript" src="js/HitBossLottery.js"></script>
+</body>
+</html>
